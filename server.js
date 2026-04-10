@@ -5,6 +5,11 @@ const puppeteer = require('puppeteer');
 const app = express();
 app.use(cors());
 
+// Rota inicial só para o UptimeRobot saber que a API está online
+app.get('/', (req, res) => {
+    res.status(200).send('API do Extrator Online e pronta para o trabalho! 🚀');
+});
+
 app.get('/api/extrair', async (req, res) => {
     const urlDoProduto = req.query.url;
 
@@ -47,6 +52,18 @@ app.get('/api/extrair', async (req, res) => {
 
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+
+        // 👇 ADICIONE ESTE BLOCO AQUI (O "TURBO") 👇
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            // Se for imagem, estilo (CSS) ou fonte, a gente bloqueia!
+            if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+                req.abort();
+            } else {
+                req.continue();
+            }
+        });
+        // 👆 FIM DO BLOCO TURBO 👆
 
         // Carrega a página (espera até o DOM carregar para ser mais rápido)
         await page.goto(urlDoProduto, { waitUntil: 'domcontentloaded', timeout: 60000 });
